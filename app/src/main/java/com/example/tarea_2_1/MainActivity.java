@@ -5,6 +5,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
 import android.Manifest;
 import android.content.Intent;
@@ -14,7 +15,14 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Button;
+import android.widget.MediaController;
+import android.widget.Toast;
 import android.widget.VideoView;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
     private VideoView VV1;
     private Button btnRec;
     private Button btnSave;
+    private MediaController mc;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +45,14 @@ public class MainActivity extends AppCompatActivity {
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                
+
+            }
+        });
+
+        btnRec.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                permisos();
             }
         });
     }
@@ -44,6 +61,10 @@ public class MainActivity extends AppCompatActivity {
         VV1 = (VideoView) findViewById(R.id.VV1);
         btnRec = (Button) findViewById(R.id.btnRec);
         btnSave = (Button) findViewById(R.id.btnSave);
+        mc =  new MediaController(this);
+        mc.setAnchorView(VV1);
+        mc.setMediaPlayer(VV1);
+        VV1.setMediaController(mc);
     }
 
     private void permisos(){
@@ -69,17 +90,23 @@ public class MainActivity extends AppCompatActivity {
     private void takeVideo(){
         Intent vIntent =  new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
         if(vIntent.resolveActivity(getPackageManager()) != null){
+            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+            String imageFileName = "VIDEO_" + timeStamp + "_.mp4";
+            File vid = new File(getExternalFilesDir(null), imageFileName);
+            Uri fotoUri= FileProvider.getUriForFile(Objects.requireNonNull(getApplicationContext()), BuildConfig.APPLICATION_ID + ".fileprovider", vid);
+            vIntent.putExtra(MediaStore.EXTRA_OUTPUT, fotoUri);
             startActivityForResult(vIntent, video_capture);
         }
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         if(requestCode == video_capture && resultCode == RESULT_OK){
             Uri uri = data.getData();
-
+            VV1.setVideoURI(uri);
+            //VV1.start();
         }
     }
 
